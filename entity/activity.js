@@ -10,15 +10,16 @@ var activitySchema = new Schema({
     type: String,
     movingTime: Number,
     elapsedTime: Number,
-    locationStart: {type: {type: String}, coordinates: [Number]},
-    locationEnd: {type: {type: String}, coordinates: [Number]},
+    locationStart: {type: {type: String, default: 'Point'}, coordinates: [Number]},
+    locationEnd: {type: {type: String, default: 'Point'}, coordinates: [Number]},
     commute: Boolean,
     processed: {type: Boolean, default: false},
     startDate: Date,
     created_at: Date,
     updated_at: Date,
 });
-
+activitySchema.index({locationStart: '2dsphere'});
+activitySchema.index({locationEnd: '2dsphere'});
 var Activity = mongoose.model('Activity', activitySchema);
 
 module.exports = Activity;

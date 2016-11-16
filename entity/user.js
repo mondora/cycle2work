@@ -6,7 +6,7 @@ var userSchema = new Schema({
     surname: String,
     slackId: String,
     stravaAuthToken: String,
-    location: {type: {type: String}, coordinates: [Number]},
+    location: {type: {type: String, default: 'Point'}, coordinates: [Number]},
     created_at: Date,
     updated_at: Date
 });
