@@ -12,6 +12,7 @@ var strava = require('strava-v3');
 var mongoose = require('mongoose');
 var User = require('./entity/user');
 var Activity = require('./entity/activity');
+var Report = require('./entity/report');
 var Token = require('./entity/token');
 var uuid = require('node-uuid');
 var moment = require('moment');
@@ -24,8 +25,7 @@ var controller = Botkit.slackbot();
 var bot = controller.spawn({
     token: slackToken
 })
-//mongoose.set('debug', true);
-
+mongoose.set('debug', true);
 
 bot.startRTM(function (err, bot, payload) {
     if (err) {
@@ -33,143 +33,8 @@ bot.startRTM(function (err, bot, payload) {
     }
 });
 
-/*
- var monthlyQuery = function (users) {
- if (users.length == 0) {
- return;
- }
-
- Activity.find({user: users[0]})
- .where('downloadDate')
- .gt(moment().subtract(1, 'month').unix())
- .sort({downloadDate: -1})
- .exec()
- .then(function (activities) {
- console.log("length:" + activities.length);
- if (activities.length > 0) {
- var distance = calcolaDistance(activities);
-
- distance = Math.round(distance / 1000);
- var gain = distance * 0.20;
- say = 'This month you have run ' + distance + ' km and earned ' + gain + ' euro';
- } else {
- say = 'This month you have not run any trip';
- }
- bot.startPrivateConversation({user: users[0].slackId}, function (err, convo) {
- if (err) {
- console.log("Error: " + err);
- } else {
- convo.say(say);
- }
- });
-
- monthlyQuery(R.tail(users));
- })
- .catch(function (err) {
- console.log('oh nooooooo: ', err);
- })
- };
-
- var schedule = function () {
- cron.schedule('* * 1 * *', function () {
- console.log('running a task every month');
- User.find({}, function (err, users) {
- if (err) {
- console.log("error: " + err);
- }
- monthlyQuery(users);
- });
- });
- };
- //schedule();
-
-
- var findActivity = function (users) {
- if (users.length == 0) {
- return;
- }
-
- Activity.find({user: users[0]})
- .sort({downloadDate: -1})
- .limit(1)
- .exec()
- .then(function (activity) {
- var option = {
- access_token: users[0].stravaAuthToken
- };
- if (activity.length > 0) {
- option.after = ((moment().subtract(7, 'days').unix() < activity[0].downloadDate)) ? activity[0].downloadDate : (moment().subtract(7, 'days').unix());
- } else {
- option.after = moment().subtract(7, 'days').unix();
- }
- return new Promise(
- function (resolve, reject) {
- console.log('chiamo strava');
- strava.athlete.listActivities(option, function (err, data) {
- if (err) {
- console.log('strava err: ', err);
- reject(err);
- } else {
- console.log('resolve promise');
- resolve(data);
- }
- });
- });
- })
- .then(function (data) {
- console.log("ciao dalla promise");
- var activities = R.filter(activity => activity.commute == true, data);
- console.log('Activities: ', activities);
- console.log('Number: ', activities.length);
- if (activities.length > 0) {
- var distance = calcolaDistance(activities);
- var activity = Activity({
- user: users[0],
- downloadDate: moment().unix(),
- distance: distance,
- activities: activities.length
- });
- return new Promise(
- function (resolve, reject) {
- console.log('salvo attività');
- activity.save(function (err, activitySaved) {
- if (err) {
- console.log('Error in save activity', err);
- reject(err);
- } else {
- console.log('resolve saving promise');
- resolve(activitySaved);
- }
- });
- });
- }
-
-
- }).then(function (activitySaved) {
- console.log("activity saved :", activitySaved);
- findActivity(R.tail(users));
- }).catch(function (err) {
- console.log('oh nooooooo: ', err);
- })
- };
-
- var recursive = function () {
- console.log("It has been one week!");
-
- User.find({}, function (err, users) {
- if (err) {
- console.log("error: " + err);
- }
- findActivity(users);
- });
-
- setTimeout(recursive, 604800);
- }
- //recursive();
-
- */
-
 // # Weekly Download
+//TODO change in daily
 cron.schedule('* * * * 0', function () {
     console.log('Task: downloadWeekly');
     User.find({}, function (err, users) {
@@ -271,6 +136,13 @@ controller.hears("login", ["direct_message"], function (bot, message) {
 
 controller.hears("report", ["direct_message"], function (bot, message) {
     var slackId = message.user;
+
+    var currentMonth = moment.utc().add('-3', 'month');
+    var start = currentMonth.startOf('month').unix();
+    var end = currentMonth.endOf('month').unix();
+    console.log(start);
+    console.log(end);
+
     User.findOne({slackId: slackId}, function (err, user) {
         if (err) {
             console.log("error report: ", err);
@@ -281,6 +153,20 @@ controller.hears("report", ["direct_message"], function (bot, message) {
             bot.reply(message, "Hello, you are not registered yet to service. To do it send a message with *login*");
         } else {
             // TODO deve rispondere con i km fatti dall'ultimo report, leggendo dal db
+            calcActivities(user, start, end)
+                .then(function (response) {
+                    console.log("Response: ", response);
+                    var distance = response[0];
+                    console.log("distance: ", distance);
+                    distance = Math.round(distance / 1000);
+                    var gain = distance * 0.20;
+                    var say = 'Since last report you have run ' + distance + ' km and earned ' + gain + ' euro';
+                    bot.reply(message, say);
+                })
+                .catch(err=> {
+                    //TODO
+                    console.log(err);
+                });
         }
     });
 });
@@ -297,77 +183,83 @@ controller.hears(["help", "^pattern$"], ["direct_message"], function (bot, messa
 });
 
 controller.hears("test", ["direct_message"], function (bot, message) {
+    monthlyReport();
+});
+var calcActivitiesAndSaveReport = function (user, startDate, endDate) {
 
-    //var slackId = message.user;
-    var slackId = "U0HJXGK8A";
+    calcActivities(user, startDate, endDate)
+        .then(distance => {
+            console.log("user: ", user);
+            /*
+             var report = Report({
+             user: users[i],
+             start: start,
+             end: end,
+             kilometers: Math.round(distance[0] / 1000)
+             });
+             report.save(function(err){
+             if (err){
+             console.log("Error in saving report", err);
+             } else {
+             console.log("Report saved");
+             }
+             })
+             */
+        })
+        .catch(e => {
+            //TODO manage errors
+            console.log("error in calcActivitiesAndSaveReport");
+            console.log(e);
+        })
 
-    User.findOne({slackId: slackId}, function (err, user) {
+}
+
+var findActivities = function (query) {
+    return Activity.find(query, function (err, activities) {
+        console.log("Asd");
         if (err) {
-            //TODO
-            console.log(err);
-            bot.reply(message, "TODO: messaggio di errore...riprova più tardi");
+            console.log("Error in query activities: ", err);
+            throw err;
             return;
         }
-        calcActivities(user)
-            .then(function (response) {
-                var distance = response[0];
-                console.log("distance: ", distance);
-                distance = Math.round(distance / 1000);
-                var gain = distance * 0.20;
-                var say = 'Since last report you have run ' + distance + ' km and earned ' + gain + ' euro';
-                bot.reply(message, say);
-            })
-            .catch(err=> {
-                //TODO
-                console.log(err);
-            });
+        if (activities.length == 0) {
+            console.log("No activities to be processed");
+        }
+        //console.log('activities: ', activities);
+        return activities;
     });
-});
+};
 
-var calcActivities = function (user) {
+var calcActivities = function (user, startDate, endDate) {
     var office = {$geometry: {type: "Point", coordinates: [46.13, 9.55]}, $maxDistance: 1000}
     var home = {$geometry: {type: "Point", coordinates: user.location.coordinates}, $maxDistance: 1000};
 
+    var baseQuery = {user: user, processed: false}//, startDate: {$gte: startDate, $lte: endDate}};
 
     var queryStartHome = {
         $and: [
-            {user: user, processed: false},
-            {locationStart: {$near: home}}
+            baseQuery,
+            {locationStart: {$nearSphere: home}}
         ]
     };
     var queryEndOffice = {
         $and: [
-            {user: user, processed: false},
-            {locationEnd: {$near: office}}
+            baseQuery,
+            {locationEnd: {$nearSphere: office}}
         ]
     };
     var queryStartOffice = {
         $and: [
-            {user: user, processed: false},
-            {locationStart: {$near: office}}
+            baseQuery,
+            {locationStart: {$nearSphere: office}}
         ]
     };
     var queryEndHome = {
         $and: [
-            {user: user, processed: false},
-            {locationEnd: {$near: home}}
+            baseQuery,
+            {locationEnd: {$nearSphere: home}}
         ]
     };
-
-    var findActivities = function (query) {
-        return Activity.find(query, function (err, activities) {
-            if (err) {
-                console.log("Error in query activities: ", err);
-                throw err;
-                return;
-            }
-            if (activities.length == 0) {
-                console.log("No activities to be processed");
-            }
-            //console.log('activities: ', activities);
-            return activities;
-        }).exec();
-    }
 
     return Promise
         .all([
@@ -381,32 +273,20 @@ var calcActivities = function (user) {
             var activitiesOfficeToHome = R.intersectionWith(R.eqBy(R.prop('stravaId')), data[2], data[3]);
             var totActivities = activitiesHomeToOffice.concat(activitiesOfficeToHome);
 
-            return R.mapAccum((distance, activity) => {
+            var distance = R.mapAccum((distance, activity) => {
                 return [distance + activity.distance, activity]
             }, 0, R.filter(activity=> {
                 var day = moment(activity.startDate).format('E')
                 return day != 6 && day != 7;
             }, totActivities));
-
             /*
-             var distance = calcolaDistance(totActivities);
-             var calcolaDistance = function (activities) {
-             var distance = 0;
-             for (var j = 0; j < activities.length; j++) {
-             distance += activities[j].distance;
-             }
-             return distance;
-             }
+             //TODO codice per aggiornare il flag processed
+             var unionActivities = R.unionWith(R.eqBy(R.prop('stravaId')), data[0], data[1]);
+             unionActivities = R.unionWith(R.eqBy(R.prop('stravaId')), unionActivities, data[2]);
+             unionActivities = R.unionWith(R.eqBy(R.prop('stravaId')), unionActivities, data[3]);
+             updateProcessed(unionActivities);
              */
-
-
-            var unionActivities = R.unionWith(R.eqBy(R.prop('stravaId')), data[0], data[1]);
-            unionActivities = R.unionWith(R.eqBy(R.prop('stravaId')), unionActivities, data[2]);
-            unionActivities = R.unionWith(R.eqBy(R.prop('stravaId')), unionActivities, data[3]);
-            updateProcessed(unionActivities);
-
             return distance;
-
         })
         .catch(err => {
             console.log("Promise.all si è rotta");
@@ -431,21 +311,20 @@ var updateProcessed = function (activities) {
     });
 }
 
-var formulaDistance = function (lon1, lat1, lon2, lat2) {
-    var R = 6371e3; // metres
-    var φ1 = lat1.toRadians();
-    var φ2 = lat2.toRadians();
-    var Δφ = (lat2 - lat1).toRadians();
-    var Δλ = (lon2 - lon1).toRadians();
+var monthlyReport = function () {
 
-    var a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-        Math.cos(φ1) * Math.cos(φ2) *
-        Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    var c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    var currentMonth = moment.utc().add('-1', 'month');
+    var start = currentMonth.startOf('month').unix();
+    var end = currentMonth.endOf('month').unix();
+    console.log('Start: ', start);
+    console.log('End: ', end);
 
-    var d = R * c;
+    User.find({stravaAuthToken: {$ne: null}}).exec(function (err, users) {
+        for (var i = 0; i < users.length; i++) {
+            calcActivitiesAndSaveReport(users[i], start, end);
+        }
+    });
 
-    return d;
 }
 
 var downloadActivities = function (users) {
@@ -499,17 +378,25 @@ var downloadActivities = function (users) {
                     movingTime: data[i].moving_time,
                     elapsedTime: data[i].elapsed_time,
                     locationStart: {
-                        coordinates: data[i].start_latlng
+                        coordinates: [
+                            data[i].start_latlng[0],
+                            data[i].start_latlng[1]
+                        ]
                     },
                     locationEnd: {
-                        coordinates: data[i].end_latlng
+                        coordinates: [
+                            data[i].end_latlng[0],
+                            data[i].end_latlng[1]
+                        ]
                     },
-                    startDate: data[i].start_date
+                    startDate: Date.parse(data[i].start_date) / 1000
                 });
+
                 act.locationStart.coordinates[0] = data[i].start_latlng[0];
                 act.locationStart.coordinates[1] = data[i].start_latlng[1];
                 act.locationEnd.coordinates[0] = data[i].end_latlng[0];
                 act.locationEnd.coordinates[1] = data[i].end_latlng[1];
+
                 activities.push(act.toObject());
             }
 

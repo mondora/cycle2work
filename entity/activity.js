@@ -14,7 +14,7 @@ var activitySchema = new Schema({
     locationEnd: {type: {type: String, default: 'Point'}, coordinates: [Number]},
     commute: Boolean,
     processed: {type: Boolean, default: false},
-    startDate: Date,
+    startDate: Number,
     created_at: Date,
     updated_at: Date,
 });
