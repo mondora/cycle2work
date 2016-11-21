@@ -1,4 +1,4 @@
-var mongoose = require('mongoose');
+var mongoose = require("mongoose");
 var Schema = mongoose.Schema;
 
 var userSchema = new Schema({
@@ -6,7 +6,7 @@ var userSchema = new Schema({
     uuid: String,
     expire: Date
 });
-//TODO manage expire date
-var Token = mongoose.model('Token', userSchema);
+// TODO manage expire date
+var Token = mongoose.model("Token", userSchema);
 
 module.exports = Token;
