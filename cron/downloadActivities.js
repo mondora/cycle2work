@@ -60,32 +60,33 @@ var downloadActivities = function (users) {
             var activities = [];
 
             for (var i = 0; i < data.length; i++) {
-                var act = new Activity({
-                    user: currentUser.toObject(),
-                    downloadDate: moment().unix(),
-                    distance: data[i].distance,
-                    name: data[i].name,
-                    stravaId: data[i].id,
-                    type: data[i].type,
-                    movingTime: data[i].moving_time,
-                    elapsedTime: data[i].elapsed_time,
-                    locationStart: {
-                        coordinates: [
-                            data[i].start_latlng[0],
-                            data[i].start_latlng[1]
-                        ]
-                    },
-                    locationEnd: {
-                        coordinates: [
-                            data[i].end_latlng[0],
-                            data[i].end_latlng[1]
-                        ]
-                    },
-                    startDate: Date.parse(data[i].start_date) / 1000
-                });
-                activities.push(act.toObject());
+                if ((data[i].start_latlng != null) && (data[i].end_latlng != null)) {
+                    var act = new Activity({
+                        user: currentUser.toObject(),
+                        downloadDate: moment().unix(),
+                        distance: data[i].distance,
+                        name: data[i].name,
+                        stravaId: data[i].id,
+                        type: data[i].type,
+                        movingTime: data[i].moving_time,
+                        elapsedTime: data[i].elapsed_time,
+                        locationStart: {
+                            coordinates: [
+                                data[i].start_latlng[0],
+                                data[i].start_latlng[1]
+                            ]
+                        },
+                        locationEnd: {
+                            coordinates: [
+                                data[i].end_latlng[0],
+                                data[i].end_latlng[1]
+                            ]
+                        },
+                        startDate: Date.parse(data[i].start_date) / 1000
+                    });
+                    activities.push(act.toObject());
+                }
             }
-
             if (activities.length == 0) {
                 console.log("no new activities");
                 downloadActivities(R.tail(users));

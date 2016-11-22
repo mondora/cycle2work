@@ -76,7 +76,7 @@ controller.hears("login", ["direct_message"], function (bot, message) {
             return Token({
                 slackId: slackId,
                 uuid: uuid.v4(),
-                expire: moment.unix()
+                expire: moment().unix()
             }).save();
 
         })
