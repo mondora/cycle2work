@@ -1,6 +1,7 @@
 var express = require("express");
 var router = express.Router();
 var strava = require("strava-v3");
+var moment = require("moment");
 var User = require("../entity/user");
 var Token = require("../entity/token");
 
@@ -27,7 +28,7 @@ router.post("/confirm", function (req, res, next) {
             res.send({error: "an error occurred"});
             return;
         }
-        if (token == null) {
+        if ((token == null)||(token.expire < moment.unix())) {
             res.send({error: "token expired"});
             return;
         }

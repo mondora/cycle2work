@@ -4,7 +4,7 @@ var Schema = mongoose.Schema;
 var userSchema = new Schema({
     slackId: String,
     uuid: String,
-    expire: Date
+    expire: Number
 });
 // TODO manage expire date
 var Token = mongoose.model("Token", userSchema);
