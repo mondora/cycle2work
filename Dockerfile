@@ -7,8 +7,6 @@ WORKDIR /usr/src/app
 COPY . /usr/src/app
 RUN npm install
 
-# Configure the listening port
-ENV PORT 80
-EXPOSE 80
+EXPOSE 3000
 
 CMD [ "npm", "start" ]
