@@ -1,9 +1,10 @@
 #!groovy​
 node {
-
+    def project_name = "cycle2work"
     def docker_registry = "b2bregistry-on.azurecr.io"
-    def docker_image_name = "cycle2work"
+    def docker_image_name = project_name
     def docker_image_tag = env.BRANCH_NAME
+    def branch_name = env.BRANCH_NAME
     echo "Building docker image: ${docker_image_name}:${docker_image_tag}"
 
     try {
@@ -26,6 +27,34 @@ node {
 
         stage("Cleanup docker image") {
             sh "docker image prune -a -f"
+        }
+        
+        stage("Deploy to kubernetes cluster") {
+                def change_cause = sh(
+                    script: "git log --oneline -1",
+                    returnStdout: true
+                ).trim()
+                build(
+                    job: "ts-k8s-deploy-configs",
+                    parameters: [
+                        [
+                            $class: "StringParameterValue",
+                            name: "PROJECT_NAME",
+                            value: project_name
+                        ],
+                        [
+                            $class: "StringParameterValue",
+                            name: "STAGE",
+                            value: branch_name
+                        ],
+                        [
+                            $class: "StringParameterValue",
+                            name: "CHANGE_CAUSE",
+                            value: change_cause
+                        ]
+                    ],
+                    wait: false
+                )
         }
 
         stage("Notify") {
