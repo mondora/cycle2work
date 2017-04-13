@@ -24,7 +24,6 @@ activitySchema.index({locationStart: "2dsphere"});
 activitySchema.index({locationEnd: "2dsphere"});
 
 activitySchema.statics.findCommutingActivities = function (user, startDate, endDate) {
-
     /*
      Query would return documents from the actitivites collection within the circle described by the center
      (mondora or user.location) with a radius of 1 kilometer.
@@ -36,8 +35,7 @@ activitySchema.statics.findCommutingActivities = function (user, startDate, endD
     var query = {
         user: user,
         processed: false,
-        // TODO uncomment following line
-        // startDate: {$gte: startDate, $lte: endDate},
+        startDate: {$gte: startDate, $lte: endDate},
         $or: [
             {
                 $and: [
