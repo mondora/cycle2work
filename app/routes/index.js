@@ -4,6 +4,7 @@ var strava = require("strava-v3");
 var moment = require("moment");
 var User = require("../entity/user");
 var Token = require("../entity/token");
+import log from "../log";
 
 /* GET home page. */
 router.get("/", function (req, res, next) {
@@ -18,36 +19,33 @@ router.post("/confirm", function (req, res, next) {
         return;
     }
 
-    console.log("response: ", req.body);
     var lat = req.body.lat;
     var lng = req.body.lng;
 
     Token.findOne({uuid: req.body.token}, function (err, token) {
-        console.log("***************");
+
         if (err) {
             res.send({error: "an error occurred"});
             return;
         }
-        if ((token == null)||(token.expire < moment.unix())) {
+        if ((token === null) || (token.expire < moment().unix())) {
             res.send({error: "token expired"});
             return;
         }
-        console.log("utente :", token.slackId);
+
         User.findOne({slackId: token.slackId}, function (err, user) {
             if (err || !user) {
-                console.log("Errore nel recuperare lo user");
+                log.error(req, "Error retrieving user", "/confirm", "out");
             }
-            console.log("longitudine: " + lng);
-            console.log("latitudine: " + lat);
+
             user.location.coordinates = [lat, lng];
 
             user.save(function (err) {
                 if (err) {
-                    console.log("Errore nel salvare l'utente: ", err);
+                    log.error({}, "Error saving user: " + err.message);
                 }
-                console.log("user salvato: ", user);
                 token.remove();
-                res.send({error: null, message: "yeahhhhh"});
+                res.send({error: null, message: ""});
             });
         });
         // recuperare l"utente
@@ -62,7 +60,7 @@ router.get("/confirm", function (req, res, next) {
     var userUuid = req.query.state;
 
     Token.findOne({uuid: userUuid}, function (err, token) {
-        if (err || !token) {
+        if (err || !token || token.expire < moment().unix()) {
             // TODO mostrare una pagina di errore
             res.render("error", {message: "token expired", error: {status: 500, stack: ""}});
             return;
@@ -87,7 +85,6 @@ router.get("/confirm", function (req, res, next) {
                     if (err) {
                         res.render("confirm", {uuid: null});
                     }
-                    console.log(token.uuid);
                     res.render("confirm", {uuid: token.uuid});
                 });
 

@@ -6,7 +6,7 @@ var userSchema = new Schema({
     uuid: String,
     expire: Number
 });
-// TODO manage expire date
+
 var Token = mongoose.model("Token", userSchema);
 
 module.exports = Token;
