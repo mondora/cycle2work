@@ -136,6 +136,7 @@ controller.hears("report", ["direct_message"], function (bot, message) {
         .then(response => {
             var distance = calculateDistance(response);
             var gain = (distance * 0.20) / 1000;
+            var gain = gain.toFixed(2);
             var say = "Since last report you have run " + Math.round(distance / 1000) + " km and earned " + gain + " €";
             bot.reply(message, say);
         })
