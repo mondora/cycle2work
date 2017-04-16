@@ -1,7 +1,7 @@
 var assert = require("assert");
 
 function getEnv (variableName, required) {
-    if (required) {
+    if (required && process.env.NODE_ENV !== "test") {
         assert(process.env[variableName], `Envrironment variable ${variableName} must be defined`);
     }
     return process.env[variableName];

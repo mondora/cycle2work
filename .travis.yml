@@ -1,0 +1,12 @@
+language: node_js
+
+node_js:
+  - 7
+
+install:
+  - npm install --no-optional
+  - npm install --dev
+
+script:
+  - npm run test
+  - npm run build
