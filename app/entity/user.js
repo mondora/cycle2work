@@ -17,7 +17,7 @@ userSchema.index({location: "2dsphere"});
 
 userSchema.statics.findBySlackId = function (slackId) {
     return User.findOne({slackId: slackId});
-}
+};
 
 var User = mongoose.model("User", userSchema);
 

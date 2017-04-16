@@ -1,6 +1,8 @@
-var mongoose = require("mongoose");
-var moment = require("moment");
-var R = require("ramda");
+import mongoose from "mongoose";
+import moment from "moment";
+import R from "ramda";
+import log from "../log";
+
 var Schema = mongoose.Schema;
 
 var activitySchema = new Schema({
@@ -26,11 +28,12 @@ activitySchema.index({locationEnd: "2dsphere"});
 activitySchema.statics.findCommutingActivities = function (user, startDate, endDate) {
     /*
      Query would return documents from the actitivites collection within the circle described by the center
-     (mondora or user.location) with a radius of 1 kilometer.
+     (office or user.location) with a radius of 1 kilometer.
      The equatorial radius of the Earth is approximately 3,963.2 miles or 6,378.1 kilometers
      */
+    // TODO use env for radius and office location
     var radians = 1 / 6378.15214;
-    var mondora = [46.1331794, 9.5507231];
+    var office = [46.1331794, 9.5507231];
 
     var query = {
         user: user,
@@ -42,7 +45,7 @@ activitySchema.statics.findCommutingActivities = function (user, startDate, endD
                     {
                         locationStart: {
                             $geoWithin: {
-                                $centerSphere: [mondora, radians]
+                                $centerSphere: [office, radians]
                             }
                         }
                     },
@@ -67,11 +70,14 @@ activitySchema.statics.findCommutingActivities = function (user, startDate, endD
                     {
                         locationEnd: {
                             $geoWithin: {
-                                $centerSphere: [mondora, radians]
+                                $centerSphere: [office, radians]
                             }
                         }
                     }
                 ]
+            },
+            {
+                commute: true
             }
         ]
     };
@@ -80,11 +86,10 @@ activitySchema.statics.findCommutingActivities = function (user, startDate, endD
         .resolve(
             Activity.find(query, function (err, activities) {
                 if (err) {
-                    console.log("Error in query activities: ", err);
+                    log.error(query, "Query error: " + err.message, "findCommutingActivities", "out");
                     throw err;
                 }
-                if (activities.length == 0) {
-                    console.log("No activities to be processed");
+                if (activities.length === 0) {
                     return [];
                 }
                 return activities;
@@ -97,7 +102,7 @@ activitySchema.statics.findCommutingActivities = function (user, startDate, endD
             }, activities);
         })
         .catch(err => {
-            console.log(err);
+            throw err;
         });
 };
 
