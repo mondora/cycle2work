@@ -1,4 +1,7 @@
-# Cycle2Work
+Cycle2Work
+===
+
+[![Build Status](https://travis-ci.org/mondora/cycle2work.svg?branch=master)](https://travis-ci.org/mondora/cycle2work)
 
 ### Develop
 
