@@ -1,7 +1,6 @@
 var express = require("express");
 var path = require("path");
 // var favicon = require("serve-favicon");
-var logger = require("morgan");
 var cookieParser = require("cookie-parser");
 var bodyParser = require("body-parser");
 var routes = require("./routes/index");
@@ -18,6 +17,7 @@ mongoose.connect(DB_URL);
 var controller = Botkit.slackbot({
     logger: log.botkit
 });
+
 var bot = controller.spawn({
     token: SLACK_TOKEN
 });
@@ -43,11 +43,21 @@ controller.on("im_created", function (bot, message) {
 });
 
 controller.hears("login", ["direct_message"], function (bot, message) {
-    action.login(bot, message);
+    log.info(message, "Hear report", "hears", "report");
+    action
+        .login(bot, message)
+        .catch(err => {
+            log.error(err, "Login error: ", "hears", "login");
+        });
 });
 
 controller.hears("report", ["direct_message"], function (bot, message) {
-    action.report(bot, message);
+    log.info(message, "Hear report", "hears", "report");
+    action
+        .report(bot, message)
+        .catch(err => {
+            log.error(err, "Report error: ", "hears", "report");
+        });
 });
 
 controller.hears("help", ["direct_message"], function (bot, message) {
@@ -62,7 +72,6 @@ app.set("view engine", "hbs");
 
 // uncomment after placing your favicon in /public
 // app.use(favicon(path.join(__dirname, "public", "favicon.ico")));
-app.use(logger("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(cookieParser());

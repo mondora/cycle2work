@@ -2,7 +2,7 @@ import log from "../log";
 import Activity from "../entity/activity";
 import User from "../entity/user";
 import Token from "../entity/token";
-import uuid from "node-uuid";
+import uuid from "uuid";
 import moment from "moment";
 import ReportUtils from "../utils/reportUtils";
 import {TOKEN_EXPIRE_MINUTES} from "../config";
