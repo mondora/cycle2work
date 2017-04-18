@@ -18,3 +18,4 @@ Run unit tests with `npm test`.
 ### Build
 
 `npm run build` will build a deployable bundle in the `build/` folder.
+
