@@ -3,27 +3,11 @@ import should from "should";
 import User from "../app/entity/user";
 import Report from "../app/entity/report";
 import Activity from "../app/entity/activity";
-import helper from "./db.test";
 import rewire from "rewire";
 
 var report = rewire("../app/cron/report");
 
 describe("Report", () => {
-
-    before((done) => {
-        helper.createDB(() => {
-            helper.popluateDB();
-            done();
-        });
-
-        report.__set__("report", function () {
-            console.log("mock cron");
-        });
-    });
-
-    after(() => {
-        helper.destroyDB();
-    });
 
     it("Should save report for previous month", done => {
         var currentMonth = moment(531100799000).utc().add("-1", "month");
@@ -142,4 +126,48 @@ describe("Report", () => {
                 done(e);
             });
     });
+
+    it("Should throw exception if report fails", done => {
+        report.__set__("moment", {
+
+            utc: function () {
+                return {
+                    add: function () {
+                        return {
+                            startOf: function () {
+                                return {
+                                    unix: function () {
+                                        return "notavaliddate";
+                                    }
+                                };
+                            },
+                            endOf: function () {
+                                return {
+                                    unix: function () {
+                                        return "notavaliddate";
+                                    }
+                                };
+                            }
+                        };
+                    }
+                };
+            }
+        });
+
+        var monthlyReport = report.__get__("monthlyReport");
+
+        monthlyReport()
+            .then(() => {
+                done(new Error("Should not be here"));
+            })
+            .catch(e => {
+                should.exists(e);
+                e.message.should.startWith("Cast to number failed");
+                done();
+            })
+            .catch(e => {
+                done(e);
+            });
+    });
+
 });

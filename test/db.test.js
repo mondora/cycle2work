@@ -6,7 +6,6 @@ var mockgoose = new Mockgoose(mongoose);
 
 var Activity = require("../app/entity/activity");
 var User = require("../app/entity/user");
-var Report = require("../app/entity/report");
 
 /*
  * Creates and/or connects to a mongo test database in memory
@@ -14,7 +13,6 @@ var Report = require("../app/entity/report");
  * @returns {void}
  */
 module.exports.createDB = (cb) => {
-
     mockgoose.prepareStorage().then(function () {
         mongoose.connect("mongodb://localhost/test", cb);
     });
@@ -23,8 +21,6 @@ module.exports.createDB = (cb) => {
 module.exports.popluateDB = () => {
 
     // Drop collections first
-    User.remove().then(Activity.remove()).then(Report.remove());
-
     var u = new User({
         name: "Name",
         surname: "Surname",
@@ -50,65 +46,80 @@ module.exports.popluateDB = () => {
         stravaAuthToken: "token2",
         location: {
             type: "Point",
-            coordinates: [46.1616791, 9.58809150000002]
+            coordinates: [0, 0]
         }
     });
     u2.save();
 
+    var u3 = new User({
+        name: "Name",
+        surname: "Surname",
+        screenName: "mock",
+        realName: "Mock Name",
+        slackId: "789",
+        slackChannel: "mockChannel3",
+        stravaAuthToken: null,
+        location: {
+            type: "Point",
+            coordinates: [0, 0]
+        }
+    });
+    u3.save();
+
     var commute = new Activity({
-        "user" : u.toObject(),
-        "downloadDate" : 1492217401,
-        "distance" : 20209.1,
-        "name" : "Activity flagged as Commute on Sunday",
-        "stravaId" : 2000000,
-        "type" : "Run",
-        "movingTime" : 11779,
-        "elapsedTime" : 14332,
-        "commute" : true,
-        "startDate" : 1491723064,
-        "processed" : false,
-        "locationEnd" : {
-            "coordinates" : [
+        "user": u.toObject(),
+        "downloadDate": 1492217401,
+        "distance": 20209.1,
+        "name": "Activity flagged as Commute on Sunday",
+        "stravaId": 2000000,
+        "type": "Run",
+        "movingTime": 11779,
+        "elapsedTime": 14332,
+        "commute": true,
+        "startDate": 1491723064,
+        "processed": false,
+        "locationEnd": {
+            "coordinates": [
                 46.145637,
                 9.574138
             ],
-            "type" : "Point"
+            "type": "Point"
         },
-        "locationStart" : {
-            "coordinates" : [
+        "locationStart": {
+            "coordinates": [
                 46.145504,
                 9.574244
             ],
-            "type" : "Point"
+            "type": "Point"
         }
     });
     commute.save();
 
     var commute2 = new Activity({
-        "user" : u.toObject(),
-        "downloadDate" : 1492217401,
-        "distance" : 20209.1,
-        "name" : "Activity flagged as Commute",
-        "stravaId" : 2000001,
-        "type" : "Run",
-        "movingTime" : 11779,
-        "elapsedTime" : 14332,
-        "commute" : true,
-        "startDate" : 1491581842,
-        "processed" : false,
-        "locationEnd" : {
-            "coordinates" : [
+        "user": u.toObject(),
+        "downloadDate": 1492217401,
+        "distance": 20209.1,
+        "name": "Activity flagged as Commute",
+        "stravaId": 2000001,
+        "type": "Run",
+        "movingTime": 11779,
+        "elapsedTime": 14332,
+        "commute": true,
+        "startDate": 1491581842,
+        "processed": false,
+        "locationEnd": {
+            "coordinates": [
                 46.145637,
                 9.574138
             ],
-            "type" : "Point"
+            "type": "Point"
         },
-        "locationStart" : {
-            "coordinates" : [
+        "locationStart": {
+            "coordinates": [
                 46.145504,
                 9.574244
             ],
-            "type" : "Point"
+            "type": "Point"
         }
     });
 

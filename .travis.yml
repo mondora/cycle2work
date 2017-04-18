@@ -4,9 +4,10 @@ node_js:
   - 7
 
 install:
-  - npm install --no-optional
-  - npm install --dev
+  - npm install
 
 script:
+  - npm run lint
   - npm run test
-  - npm run build
+
+after_success: npm run coverage

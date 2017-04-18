@@ -1,14 +1,20 @@
 {
   "name": "cycle2work",
-  "version": "1.0.0-SNAPSHOT",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "build": "node_modules/.bin/babel app/ -d build/ --copy-files",
     "start": "node index.js",
-    "test": "NODE_ENV=test NODE_PATH=app mocha --compilers js:babel-core/register --recursive --timeout 120000 --reporter mocha-pretty-bunyan-nyan",
+    "test": "NODE_ENV=test NODE_PATH=app nyc --reporter=html --reporter=text mocha --compilers js:babel-core/register --recursive --timeout 120000",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "lint": "eslint app test",
     "dev:start": "nodemon --ignore test/ --exec node_modules/.bin/babel-node app/bin/www",
     "dev:test": "npm test -- --watch",
     "dev": "npm run dev:start & npm run dev:test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mondora/cycle2work.git"
   },
   "engines": {
     "node": "7.2.1"
@@ -39,10 +45,11 @@
     "babel-eslint": "^7.2.2",
     "babel-preset-env": "^1.4.0",
     "babel-preset-latest": "^6.24.1",
+    "coveralls": "^2.13.0",
     "mocha": "^3.2.0",
-    "mocha-pretty-bunyan-nyan": "^1.0.4",
     "mockgoose": "^7.1.1",
     "nodemon": "^1.11.0",
+    "nyc": "^10.2.0",
     "rewire": "^2.5.2",
     "should": "^11.2.1"
   }

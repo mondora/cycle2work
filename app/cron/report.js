@@ -3,10 +3,10 @@ import User from "../entity/user";
 import Activity from "../entity/activity";
 import Report from "../entity/report";
 import R from "ramda";
-import moment from "moment";
 import ReportUtils from "../utils/reportUtils";
 import log from "../log";
 
+var moment = require("moment");
 var _bot;
 
 // Monthly Report
@@ -42,11 +42,6 @@ var monthlyReport = function () {
         });
 };
 
-var updateProcessed = function (activities) {
-    var ids = R.map(a => a._id, activities);
-    return Activity.update({"_id": {$in: ids}}, {$set: {processed: true}}, {multi: true});
-};
-
 var say = function (channel, text) {
     _bot.say({
         text: text,
@@ -79,11 +74,13 @@ var saveReport = function (user, startDate, endDate) {
         })
         .then(report => {
             _report = report;
-            return updateProcessed(_activities);
+            var ids = R.map(a => a._id, _activities);
+            return Activity.update({"_id": {$in: ids}}, {$set: {processed: true}}, {multi: true});
         })
         .then(() => {
             var gain = ReportUtils.calculateIncomingsByDistance(_report.distance);
             say(user.slackChannel, "Monthly report (" + moment.unix(startDate).format("DD/MM/YYYY") + " - " + moment.unix(endDate).format("DD/MM/YYYY") + "): " + (_report.distance / 1000).toFixed(2) + "km, " + gain + "€");
+            return;
         })
         .catch(e => {
             throw e;

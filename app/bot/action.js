@@ -3,15 +3,31 @@ import Activity from "../entity/activity";
 import User from "../entity/user";
 import Token from "../entity/token";
 import uuid from "node-uuid";
-import strava from "strava-v3";
 import moment from "moment";
 import ReportUtils from "../utils/reportUtils";
 import {TOKEN_EXPIRE_MINUTES} from "../config";
+var strava = require("strava-v3");
 
 var getReportMessage = function (activities) {
     var distance = ReportUtils.calculateDistance(activities);
     var gain = ReportUtils.calculateIncomingsByDistance(distance);
-    return "Since last report you have run " + Math.round(distance / 1000) + " km and earned " + gain + " €";
+    return "Since your last report you have run " + Math.round(distance / 1000) + " km and earned " + gain + " €";
+};
+
+var reply = function (say, message, bot) {
+    bot.reply(message, say);
+};
+
+var getUserInfo = function (bot, user) {
+    return new Promise((resolve, reject) => {
+        bot.api.users.info({user: user}, (error, response) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(response);
+            }
+        });
+    });
 };
 
 function help (bot, message) {
@@ -35,20 +51,20 @@ function login (bot, message) {
 
     var slackId = message.user;
     var slackChannel = message.channel;
-    var user = null;
+    var _user = null;
     var url = null;
 
-    User
+    return User
         .findBySlackId(slackId)
-        .then(usr => {
+        .then(user => {
 
-            if (usr && usr.stravaAuthToken !== null) {
+            if (user && user.stravaAuthToken !== null) {
                 log.info(message, "User already registered", "login", "in");
-                bot.reply(message, "Hello, you are already registered");
+                reply("Hello, you are already registered", message, bot);
                 throw new Error("User already registered");
             }
 
-            user = usr;
+            _user = user;
 
             return Token({
                 slackId: slackId,
@@ -61,35 +77,36 @@ function login (bot, message) {
 
             url = strava.oauth.getRequestAccessURL({scope: "view_private", state: token.uuid});
 
-            if (user !== null) {
+            if (_user !== null) {
                 log.info(message, "User already registered, missing strava auth token", "login", "out");
                 return url;
+            } else {
+                return getUserInfo(bot, message.user)
+                    .then(response => {
+                        _user = new User({
+                            name: response.user.profile.first_name,
+                            surname: response.user.profile.last_name,
+                            screenName: response.user.name,
+                            realName: response.user.real_name,
+                            slackId: slackId,
+                            slackChannel: slackChannel,
+                            location: {
+                                type: "Point",
+                                coordinates: [0, 0]
+                            }
+                        });
+
+                        return _user.save();
+                    });
             }
-
-            bot.api.users.info({user: message.user}, (error, response) => {
-
-                user = User({
-                    name: response.user.profile.first_name,
-                    surname: response.user.profile.last_name,
-                    screenName: response.user.name,
-                    realName: response.user.real_name,
-                    slackId: slackId,
-                    slackChannel: slackChannel,
-                    location: {
-                        type: "Point",
-                        coordinates: [0, 0]
-                    }
-                });
-
-                return user
-                    .save();
-            });
         })
         .then(() => {
-            bot.reply(message, "Visit following url for complete registration: " + url);
+            reply("Visit following url for complete registration: " + url, message, bot);
+            return _user;
         })
         .catch(err => {
             log.error({}, "Login error: " + err.message, "login", "out");
+            throw err;
         });
 }
 
@@ -99,20 +116,22 @@ function report (bot, message) {
     var start = currentMonth.startOf("month").unix();
     var end = currentMonth.endOf("month").unix();
 
-    User.findBySlackId(message.user)
+    return User.findBySlackId(message.user)
         .then(user => {
-            if (!user || user.stravaAuthToken === null) {
-                bot.reply(message, "Hello, you are not registered yet to service. To do it send a message with *login*");
+            if (user === null || user.stravaAuthToken === null) {
+                reply("Hello, you are not registered yet to service. To do it send a message with *login*", message, bot);
                 throw new Error("User not registered");
             }
             return Activity.findCommutingActivities(user, start, end);
         })
         .then(activities => {
-            var say = getReportMessage(activities);
-            bot.reply(message, say);
+            var response = getReportMessage(activities);
+            reply(response, message, bot);
+            return response;
         })
         .catch(err => {
             log.error({}, "Report error: " + err.message, "report", "out");
+            throw err;
         });
 }
 
@@ -125,9 +144,6 @@ function reportByUser (user) {
     return Activity.findCommutingActivities(user, start, end)
         .then(activities => {
             return getReportMessage(activities);
-        })
-        .catch(err => {
-            log.error({user: user}, "Report error: " + err.message, "reportBySlackId", "out");
         });
 }
 

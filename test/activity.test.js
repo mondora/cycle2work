@@ -4,21 +4,7 @@ import User from "../app/entity/user";
 import Activity from "../app/entity/activity";
 import ReportUtils from "../app/utils/reportUtils";
 
-var helper = require("./db.test");
-
-
 describe("Activity", () => {
-
-    before(done => {
-        helper.createDB(() => {
-            helper.popluateDB();
-            done();
-        });
-    });
-
-    after(() => {
-        helper.destroyDB();
-    });
 
     var currentMonth = moment(527027413000).utc();
     var start = currentMonth.startOf("month").unix();
@@ -50,6 +36,24 @@ describe("Activity", () => {
             })
             .catch(error => {
                 done(error);
+            });
+    });
+
+    it("Should throw exception on query error", done => {
+        User.findBySlackId("123")
+            .then(user => {
+                return Activity.findCommutingActivities(user, "notavaliddate", "anotherinvaliddate");
+            })
+            .then(() => {
+                done(new Error("Should not be here"));
+            })
+            .catch(e => {
+                should.exists(e);
+                e.message.should.startWith("Cast to number failed");
+                done();
+            })
+            .catch(e => {
+                done(e);
             });
     });
 

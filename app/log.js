@@ -81,7 +81,7 @@ function getObj (payload, action, step, time) {
 }
 
 function getObj2 (payload, action, step, time) {
-    var obj = {"payload:": payload, "action": action, "step": step};
+    var obj = {"payload": payload, "action": action, "step": step};
     if (!R.isNil(time)) {
         obj.exec_time = getMilliseconds(time);
     }

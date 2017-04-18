@@ -7,11 +7,11 @@ var Token = require("../entity/token");
 import log from "../log";
 
 /* GET home page. */
-router.get("/", function (req, res, next) {
+router.get("/", function (req, res) {
     res.render("index", {title: "Express"});
 });
 
-router.post("/confirm", function (req, res, next) {
+router.post("/confirm", function (req, res) {
 
     // TODO migliorare validazione
     if (!req.body || !req.body.lat || !req.body.lng || !req.body.token) {
@@ -55,7 +55,7 @@ router.post("/confirm", function (req, res, next) {
     });
 });
 
-router.get("/confirm", function (req, res, next) {
+router.get("/confirm", function (req, res) {
     var code = req.query.code;
     var userUuid = req.query.state;
 

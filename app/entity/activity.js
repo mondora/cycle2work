@@ -35,6 +35,10 @@ activitySchema.statics.findCommutingActivities = function (user, startDate, endD
     var radians = 1 / 6378.15214;
     var office = [46.1331794, 9.5507231];
 
+    if (user === null) {
+        throw new Error("User is null");
+    }
+
     var query = {
         user: user,
         processed: false,
@@ -82,19 +86,7 @@ activitySchema.statics.findCommutingActivities = function (user, startDate, endD
         ]
     };
 
-    return Promise
-        .resolve(
-            Activity.find(query, function (err, activities) {
-                if (err) {
-                    log.error(query, "Query error: " + err.message, "findCommutingActivities", "out");
-                    throw err;
-                }
-                if (activities.length === 0) {
-                    return [];
-                }
-                return activities;
-            })
-        )
+    return Activity.find(query)
         .then(activities => {
             return R.filter(activity => {
                 var day = moment.unix(activity.startDate).format("E");
@@ -102,6 +94,7 @@ activitySchema.statics.findCommutingActivities = function (user, startDate, endD
             }, activities);
         })
         .catch(err => {
+            log.error(query, "Query error: " + err.message, "findCommutingActivities", "out");
             throw err;
         });
 };
