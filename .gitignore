@@ -1,0 +1,8 @@
+node_modules/
+.idea/
+*.sh
+*.log
+*.env
+build/
+coverage/
+.nyc*

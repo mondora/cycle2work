@@ -1,0 +1,56 @@
+{
+  "name": "cycle2work",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "node_modules/.bin/babel app/ -d build/ --copy-files",
+    "start": "node index.js",
+    "test": "NODE_ENV=test NODE_PATH=app nyc --reporter=html --reporter=text mocha --compilers js:babel-core/register --recursive --timeout 120000",
+    "coverage": "nyc report --reporter=text-lcov | coveralls",
+    "lint": "eslint app test",
+    "dev:start": "nodemon --ignore test/ --exec node_modules/.bin/babel-node app/bin/www",
+    "dev:test": "npm test -- --watch",
+    "dev": "npm run dev:start & npm run dev:test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/mondora/cycle2work.git"
+  },
+  "engines": {
+    "node": "7.2.1"
+  },
+  "dependencies": {
+    "assert": "^1.4.1",
+    "body-parser": "~1.15.1",
+    "botkit": "^0.2.2",
+    "bunyan": "^1.8.10",
+    "cookie-parser": "~1.4.3",
+    "debug": "~2.2.0",
+    "eslint": "^3.19.0",
+    "express": "~4.13.4",
+    "express-bunyan-logger": "^1.3.1",
+    "hbs": "~4.0.0",
+    "moment": "^2.14.1",
+    "mongoose": "^4.9.4",
+    "morgan": "~1.7.0",
+    "node-cron": "^1.1.2",
+    "node-sass-middleware": "0.8.0",
+    "node-uuid": "^1.4.7",
+    "ramda": "^0.22.1",
+    "serve-favicon": "~2.3.0",
+    "strava-v3": "^1.12.1"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.24.1",
+    "babel-eslint": "^7.2.2",
+    "babel-preset-env": "^1.4.0",
+    "babel-preset-latest": "^6.24.1",
+    "coveralls": "^2.13.0",
+    "mocha": "^3.2.0",
+    "mockgoose": "^7.1.1",
+    "nodemon": "^1.11.0",
+    "nyc": "^10.2.0",
+    "rewire": "^2.5.2",
+    "should": "^11.2.1"
+  }
+}
