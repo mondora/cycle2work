@@ -33,7 +33,7 @@ activitySchema.statics.findCommutingActivities = function (user, startDate, endD
      */
     // TODO use env for radius and office location
     var radians = 1 / 6378.15214;
-    var office = [46.1331794, 9.5507231];
+    var office = [46.161284, 9.759623];
 
     if (user === null) {
         throw new Error("User is null");
