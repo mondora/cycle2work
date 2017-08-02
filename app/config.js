@@ -1,3 +1,4 @@
+require("dotenv").config();
 var assert = require("assert");
 
 function getEnv (variableName, required) {

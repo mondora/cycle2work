@@ -1,18 +1,10 @@
 import bunyan from "bunyan";
 import R from "ramda";
-import {LOG_DIR, LOG_LEVEL} from "./config";
-
-const streams = [{
-    path: `${LOG_DIR}/cycle2work.log`,
-    type: "rotating-file",
-    period: "1d",
-    count: 7,
-    level: LOG_LEVEL
-}];
+import {LOG_LEVEL} from "./config";
 
 const log = bunyan.createLogger({
     name: "Cycle2Work",
-    streams
+    level: LOG_LEVEL
 });
 
 function infoRaw (payload, msg, action, step, time) {
