@@ -1,14 +1,14 @@
 language: node_js
 
 node_js:
-  - 7
+  - 8
 
 install:
-  - npm install
+  - yarn install
 
 script:
-  - npm run lint
-  - npm run test
-  - npm run build
+  - yarn run lint
+  - yarn run test
+  - yarn run build
 
-after_success: npm run coverage
+after_success: yarn run coverage
